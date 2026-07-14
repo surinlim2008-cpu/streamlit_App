@@ -4,15 +4,14 @@ import pandas as pd
 import plotly.graph_objects as go
 
 st.set_page_config(
-    page_title="Global Top10 Stock Dashboard",
+    page_title="Global Stock Dashboard",
     page_icon="📈",
     layout="wide"
 )
 
-st.title("🌎 Global Top10 Stock Dashboard")
-st.caption("최근 1년간 글로벌 시가총액 Top10 기업의 주가를 확인해보세요.")
+st.title("🌍 Global Market Cap Top 10 Dashboard")
+st.markdown("최근 1년 동안 글로벌 시가총액 Top10 기업의 주가를 확인할 수 있습니다.")
 
-# 시가총액 Top10 (2025~2026 기준)
 stocks = {
     "Apple": "AAPL",
     "Microsoft": "MSFT",
@@ -20,60 +19,71 @@ stocks = {
     "Amazon": "AMZN",
     "Alphabet": "GOOGL",
     "Meta": "META",
-    "Saudi Aramco": "2222.SR",
     "Broadcom": "AVGO",
     "TSMC": "TSM",
-    "Berkshire Hathaway": "BRK-B"
+    "Berkshire Hathaway": "BRK-B",
+    "Saudi Aramco": "2222.SR"
 }
 
-selected = st.sidebar.selectbox(
+company = st.sidebar.selectbox(
     "기업 선택",
     list(stocks.keys())
 )
 
-show_volume = st.sidebar.checkbox("거래량 표시", True)
+ticker = stocks[company]
+
+period = st.sidebar.selectbox(
+    "기간",
+    ["1mo", "3mo", "6mo", "1y", "5y"],
+    index=3
+)
+
 show_ma20 = st.sidebar.checkbox("20일 이동평균", True)
 show_ma60 = st.sidebar.checkbox("60일 이동평균", False)
 
-ticker = stocks[selected]
+with st.spinner("데이터 불러오는 중..."):
 
-data = yf.download(
-    ticker,
-    period="1y",
-    auto_adjust=True,
-    progress=False
-)
+    data = yf.download(
+        ticker,
+        period=period,
+        auto_adjust=True,
+        progress=False
+    )
+
+# yfinance 최신버전 대응
+if isinstance(data.columns, pd.MultiIndex):
+    data.columns = data.columns.droplevel(1)
 
 if data.empty:
-    st.error("데이터를 불러오지 못했습니다.")
+    st.error("주가 데이터를 가져오지 못했습니다.")
     st.stop()
 
-# 이동평균
-data["MA20"] = data["Close"].rolling(20).mean()
-data["MA60"] = data["Close"].rolling(60).mean()
+close = data["Close"]
+high = data["High"]
+low = data["Low"]
 
-# 현재가
-current = float(data["Close"].iloc[-1])
-start = float(data["Close"].iloc[0])
+data["MA20"] = close.rolling(20).mean()
+data["MA60"] = close.rolling(60).mean()
+
+current = close.iloc[-1]
+start = close.iloc[0]
 
 change = (current-start)/start*100
 
-high = float(data["High"].max())
-low = float(data["Low"].min())
-
 col1,col2,col3,col4 = st.columns(4)
 
-col1.metric("현재가", f"${current:,.2f}")
-col2.metric("1년 수익률", f"{change:.2f}%")
-col3.metric("최고가", f"${high:,.2f}")
-col4.metric("최저가", f"${low:,.2f}")
+col1.metric("현재가", f"${current:.2f}")
+col2.metric("수익률", f"{change:.2f}%")
+col3.metric("최고가", f"${high.max():.2f}")
+col4.metric("최저가", f"${low.min():.2f}")
 
 fig = go.Figure()
 
 fig.add_trace(
     go.Scatter(
         x=data.index,
-        y=data["Close"],
+        y=close,
+        mode="lines",
         name="Close",
         line=dict(width=3)
     )
@@ -97,34 +107,13 @@ if show_ma60:
         )
     )
 
-if show_volume:
-
-    fig.add_trace(
-        go.Bar(
-            x=data.index,
-            y=data["Volume"],
-            name="Volume",
-            yaxis="y2",
-            opacity=0.3
-        )
-    )
-
-    fig.update_layout(
-        yaxis2=dict(
-            overlaying='y',
-            side='right',
-            showgrid=False,
-            title='Volume'
-        )
-    )
-
 fig.update_layout(
     template="plotly_dark",
-    height=700,
+    height=650,
     hovermode="x unified",
-    title=f"{selected} ({ticker})",
+    title=f"{company} ({ticker})",
     xaxis_title="Date",
-    yaxis_title="Price (USD)"
+    yaxis_title="Price"
 )
 
 st.plotly_chart(fig, use_container_width=True)

@@ -19,7 +19,11 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
 
-    df = pd.read_csv(uploaded_file)
+    try:
+    df = pd.read_csv(uploaded_file, encoding="cp949")
+except UnicodeDecodeError:
+    uploaded_file.seek(0)
+    df = pd.read_csv(uploaded_file, encoding="utf-8")
 
     st.success("CSV 업로드 완료!")
 

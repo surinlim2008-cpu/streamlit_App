@@ -19,7 +19,7 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
 
-    try:
+try:
     df = pd.read_csv(uploaded_file, encoding="cp949")
 except UnicodeDecodeError:
     uploaded_file.seek(0)

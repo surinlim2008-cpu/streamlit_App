@@ -164,7 +164,7 @@ st.markdown("""
 
 <div class="subtitle">
 
-달콤하게 찾는 서울 공영주차장 🍓✨
+ 🍓✨
 
 </div>
 

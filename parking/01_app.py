@@ -8,7 +8,7 @@ from streamlit_folium import st_folium
 # --------------------------
 
 st.set_page_config(
-    page_title="🍰 주차를 열심히^^",
+    page_title="디자인이 너무 촌스러워요 ㅈㅅ",
     page_icon="🍓",
     layout="wide"
 )
